@@ -1,7 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <raylib.h>
 #include "../core/types.h"
+#include "isometric_camera.h"
+#include <memory>
 
 namespace ns {
 
@@ -15,11 +17,11 @@ public:
     Position screen_to_grid(Vector2 screen_pos) const;
     void set_zoom(float z);
     float get_zoom() const;
+    operator IsometricCamera2D&() { return *impl_; }
+    operator const IsometricCamera2D&() const { return *impl_; }
 
 private:
-    Camera2D camera_{};
-    float zoom_ = 1.0f;
-    float pan_speed_ = 300.0f;
+    std::unique_ptr<IsometricCamera2D> impl_;
 };
 
 } // namespace ns

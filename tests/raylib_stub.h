@@ -10,6 +10,7 @@
 namespace ns {
 
 struct Vector2 { float x, y; };
+struct Vector2i { int x, y; };
 struct Color { unsigned char r, g, b, a; };
 struct Texture2D { unsigned int id; int width, height; int mipmaps; int format; };
 struct Camera2D { Vector2 offset, target; float rotation, zoom; };

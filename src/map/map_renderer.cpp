@@ -4,7 +4,7 @@
 
 namespace ns {
 
-void MapRenderer::render(const GameMap& map, Camera2D cam) {
+void MapRenderer::render(const GameMap& map, const IsometricCamera2D& cam) {
     // Render islands
     for (const auto& island : map.islands()) {
         for (const auto& tile : island.tiles) {
@@ -25,14 +25,8 @@ void MapRenderer::render(const GameMap& map, Camera2D cam) {
     }
 }
 
-void MapRenderer::render_tile(int gx, int gy, IslandType type, Camera2D cam) {
-    Vector2 screen = {
-        static_cast<float>((gx - gy) * (TILE_WIDTH / 2)),
-        static_cast<float>((gx + gy) * (TILE_HEIGHT / 2))
-    };
-
-    // Apply camera transform
-    Vector2 transformed = GetWorldToScreen2D(screen, cam);
+void MapRenderer::render_tile(int gx, int gy, IslandType type, const IsometricCamera2D& cam) {
+    Vector2 transformed = cam.grid_to_screen(gx, gy);
 
     // Try to load texture
     std::string tile_key;
@@ -82,7 +76,7 @@ void MapRenderer::render_tile(int gx, int gy, IslandType type, Camera2D cam) {
     }
 }
 
-void MapRenderer::render_bridge(const BridgeSegment& bridge, Camera2D cam) {
+void MapRenderer::render_bridge(const BridgeSegment& bridge, const IsometricCamera2D& cam) {
     Color col = bridge_color(bridge.state);
     // Tint by owner
     if (bridge.owner_id == 0) col = ColorBrightness(col, 0.2f); // Player 1 tint
@@ -102,11 +96,7 @@ void MapRenderer::render_bridge(const BridgeSegment& bridge, Camera2D cam) {
     Texture2D tex = am.get_texture(key);
 
     for (const auto& tile : bridge.occupied_tiles) {
-        Vector2 screen = {
-            static_cast<float>((tile.gx - tile.gy) * (TILE_WIDTH / 2)),
-            static_cast<float>((tile.gx + tile.gy) * (TILE_HEIGHT / 2))
-        };
-        Vector2 transformed = GetWorldToScreen2D(screen, cam);
+        Vector2 transformed = cam.grid_to_screen(tile.gx, tile.gy);
 
         if (tex.id != 0) {
             Rectangle src = {0, 0, static_cast<float>(tex.width), static_cast<float>(tex.height)};
@@ -124,12 +114,8 @@ void MapRenderer::render_bridge(const BridgeSegment& bridge, Camera2D cam) {
     }
 }
 
-void MapRenderer::render_geyser(const Geyser& geyser, Camera2D cam) {
-    Vector2 screen = {
-        static_cast<float>((geyser.pos.x - geyser.pos.y) * (TILE_WIDTH / 2)),
-        static_cast<float>((geyser.pos.x + geyser.pos.y) * (TILE_HEIGHT / 2))
-    };
-    Vector2 transformed = GetWorldToScreen2D(screen, cam);
+void MapRenderer::render_geyser(const Geyser& geyser, const IsometricCamera2D& cam) {
+    Vector2 transformed = cam.grid_to_screen(geyser.pos.x, geyser.pos.y);
 
     auto& am = AssetManager::instance();
     Texture2D tex = am.get_texture("geyser_storm");

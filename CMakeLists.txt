@@ -25,6 +25,7 @@ if(BUILD_GAME)
         src/assets/sound_bank.cpp
         src/input/input_handler.cpp
         src/camera/game_camera.cpp
+        src/camera/isometric_camera.cpp
         src/camera/minimap_camera.cpp
         src/map/island.cpp
         src/map/island_generator.cpp
@@ -70,6 +71,8 @@ enable_testing()
 set(TEST_SOURCES
     tests/test_types.cpp
     tests/test_map.cpp
+    tests/test_camera.cpp
+    src/camera/isometric_camera.cpp
     src/core/random.cpp
     src/map/island.cpp
     src/map/island_generator.cpp
