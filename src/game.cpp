@@ -155,30 +155,23 @@ void Game::render_scene() {
     }
 
     if (state_machine_.get_state() == GameState::Paused) {
-        BeginMode2D(camera_.camera());
         if (map_) map_renderer_.render(*map_, camera_);
-        EndMode2D();
         menu_.render_paused();
         return;
     }
 
     if (state_machine_.get_state() == GameState::GameOver || state_machine_.get_state() == GameState::Victory) {
-        BeginMode2D(camera_.camera());
         if (map_) map_renderer_.render(*map_, camera_);
-        EndMode2D();
         menu_.render_game_over(state_machine_.get_state() == GameState::Victory, 1, 1);
         return;
     }
 
-    BeginMode2D(camera_.camera());
-
+    // No BeginMode2D - IsometricCamera2D handles all coordinate transformation manually
     if (map_) {
         map_renderer_.render(*map_, camera_);
     }
 
     particles_.render();
-
-    EndMode2D();
 
     hud_.render(energy_, timer_.get_speed(), timer_.is_paused());
 
