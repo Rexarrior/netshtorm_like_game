@@ -36,6 +36,7 @@ if(BUILD_GAME)
         src/ui/hud.cpp
         src/ui/minimap.cpp
         src/systems/particle_system.cpp
+        src/test/test_controller.cpp
     )
 
     add_executable(netstorm_like ${SOURCES})

@@ -18,6 +18,7 @@
 #include "ui/hud.h"
 #include "ui/minimap.h"
 #include "systems/particle_system.h"
+#include "test/test_controller.h"
 #include <memory>
 #include <vector>
 

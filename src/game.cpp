@@ -6,6 +6,9 @@
 namespace ns {
 
 Game::Game() : minimap_cam_(32) {
+    // Initialize test controller if GAME_TEST_MODE is set
+    TestController::instance().init();
+    
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "NetStorm-Like");
     SetTargetFPS(TARGET_FPS);
 
@@ -188,6 +191,9 @@ void Game::render() {
 
 void Game::run() {
     while (!WindowShouldClose()) {
+        // Process test controller commands if in test mode
+        TestController::instance().process_commands(*this);
+        
         update();
         render();
     }
