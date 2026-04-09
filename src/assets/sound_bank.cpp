@@ -18,7 +18,7 @@ void SoundBank::play(const std::string& key) const {
     if (it == registered_sounds_.end()) return;
     auto& am = AssetManager::instance();
     Sound snd = am.get_sound(key);
-    if (snd.id != 0) {
+    if (IsSoundValid(snd)) {
         PlaySound(snd);
     }
 }

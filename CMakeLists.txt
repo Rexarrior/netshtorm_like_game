@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(raylib QUIET)
+find_package(glfw3 QUIET)
 option(BUILD_GAME "Build the main game executable (requires raylib)" ${raylib_FOUND})
 
 if(BUILD_GAME AND NOT raylib_FOUND)
@@ -39,7 +40,7 @@ if(BUILD_GAME)
 
     add_executable(netstorm_like ${SOURCES})
     target_include_directories(netstorm_like PRIVATE ${CMAKE_SOURCE_DIR}/src)
-    target_link_libraries(netstorm_like PRIVATE raylib)
+    target_link_libraries(netstorm_like PRIVATE raylib glfw)
 
     if(MSVC)
         target_compile_options(netstorm_like PRIVATE /W4 /WX-)

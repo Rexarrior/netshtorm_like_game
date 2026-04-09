@@ -85,8 +85,8 @@ void MapRenderer::render_tile(int gx, int gy, IslandType type, Camera2D cam) {
 void MapRenderer::render_bridge(const BridgeSegment& bridge, Camera2D cam) {
     Color col = bridge_color(bridge.state);
     // Tint by owner
-    if (bridge.owner_id == 0) col = ColorTint(col, 1.2f); // Player 1 tint
-    else if (bridge.owner_id == 1) col = ColorTint(col, 0.8f); // Player 2 tint
+    if (bridge.owner_id == 0) col = ColorBrightness(col, 0.2f); // Player 1 tint
+    else if (bridge.owner_id == 1) col = ColorBrightness(col, -0.2f); // Player 2 tint
 
     auto& am = AssetManager::instance();
     std::string shape_name;
