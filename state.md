@@ -1,7 +1,7 @@
 # NetStorm-Like — Project State
 
 **Date**: 2026-04-09
-**Phase**: Phase 1 (Foundation) — Code complete, build environment issues pending
+**Phase**: Phase 1.5 (Graphics Debug) — IsometricCamera2D implemented, BeginMode2D removed
 **Engine**: raylib 5.5 (C++17)
 
 ---
@@ -75,6 +75,25 @@ build.bat                          — Build script (see Build Instructions belo
 
 ## What Works (Verified)
 
+### Graphics Architecture Decision (2026-04-09)
+**Problem**: Isometric tiles not visible - islands appear in top-right corner instead of centered.
+
+**Root Cause**: Conflicting coordinate systems:
+- `BeginMode2D(camera_.camera())` used raylib's Camera2D with `target={0,0}`
+- `MapRenderer` used `IsometricCamera2D::grid_to_screen()` which does full isometric transform
+
+These two approaches are incompatible - raylib's Camera2D expects world coordinates but received isometric screen coordinates.
+
+**Solution**: **Remove BeginMode2D** for gameplay rendering. IsometricCamera2D::grid_to_screen() handles ALL coordinate transformation manually. This gives us full control over the isometric projection pipeline.
+
+**Why not fix BeginMode2D**: raylib's Camera2D is designed for standard 2D panning/zooming, not isometric grids. The isometric transformation requires custom logic that doesn't fit Camera2D's model.
+
+**Result (2026-04-09)**:
+- ✅ Islands ARE NOW VISIBLE after BeginMode2D removal
+- ❌ RenderTexture screenshot is FLIPPED/MIRRORED (macOS issue)
+- ❌ UI text appears upside-down in screenshots (same RenderTexture issue)
+- ⚠️ Need to verify islands are properly centered (not at screen edge)
+
 ### Code Audit — PASS (22 issues found and fixed)
 - CRITICAL: Rectangle syntax error in tests — ✅ fixed
 - CRITICAL: `IslandType::None` missing from enum — ✅ added
@@ -146,6 +165,7 @@ A `build.bat` file exists at the project root. It should contain the vcvarsall +
 | MVP scope | 2 elements (Sun+Thunder), 3 units each, 3 bridge shapes |
 | Grid | Isometric grid, 64x32 tile diamonds |
 | Determinism | Required for future lockstep (fixed timestep, seeded RNG) |
+| **Rendering** | Manual coordinate conversion via IsometricCamera2D::grid_to_screen(), **no BeginMode2D** for gameplay rendering |
 
 ---
 
@@ -205,6 +225,45 @@ API: MiniMax `image-01` for images, `music-2.5` for audio
 Keys: `S:\programming\my\ai\MiniMax_api_example\.env`
 
 Total assets to generate: **48** (see `docs/05_asset_list.md` when recreated)
+
+---
+
+## Known Graphics Issues (2026-04-09)
+
+### Issue 1: RenderTexture Screenshot Flip (macOS)
+**Severity**: Medium (affects automated testing only)
+**Status**: Known, not fixed
+
+**Symptoms**:
+- Offscreen screenshots via `RenderTexture2D` appear FLIPPED/MIRRORED on macOS
+- UI text renders upside-down in screenshots
+- Gameplay appears fine visually (only screenshots are affected)
+
+**Root Cause**: macOS GPU drivers handle RenderTexture Y-flip differently than other platforms.
+
+**Workaround**: Use `screencapture` (macOS native) instead of `RenderTexture2D` for screenshots. See `scripts/test_game.py` which uses AppleScript+screencapture.
+
+**Potential Fix**: Flip the RenderTexture vertically before export, or use `LoadImageFromTexture` with proper Y-axis handling.
+
+---
+
+### Issue 2: Island Positioning Verification Needed
+**Severity**: Low (needs verification)
+**Status**: Likely fixed, not confirmed
+
+**Symptoms**:
+- Need to verify islands render at screen center (640, 360)
+- Previous bug: islands appeared in top-right corner
+
+**Verification**: Compare screenshot with expected center position.
+
+---
+
+### Issue 3: Minimap Uses Different Coordinate System
+**Severity**: Low (design issue)
+**Status**: Known, working as designed
+
+**Note**: Minimap uses direct 2D drawing (no IsometricCamera2D). This works because minimap has its own simple coordinate math. However, if camera zoom/pan is implemented, minimap may need to sync with IsometricCamera2D.
 
 ---
 
