@@ -19,6 +19,7 @@
 #include "ui/minimap.h"
 #include "systems/particle_system.h"
 #include "test/test_controller.h"
+#include <raylib.h>
 #include <memory>
 #include <vector>
 
@@ -29,12 +30,15 @@ public:
     Game();
     ~Game();
     void run();
+    void start_game();  // Called by test controller to start game from menu
 
 private:
     void init_demo_map();
     void update();
     void render();
     void handle_input();
+    void render_scene();  // Render the current game scene (used for both screen and screenshot)
+    void take_offscreen_screenshot(const std::string& name);
 
     GameCamera camera_;
     MinimapCamera minimap_cam_;
@@ -48,6 +52,7 @@ private:
     StateMachine state_machine_;
 
     std::unique_ptr<GameMap> map_;
+    std::unique_ptr<RenderTexture2D> screenshot_texture_;
     int energy_ = 500;
     int current_player_ = 0;
 };

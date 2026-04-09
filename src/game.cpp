@@ -2,6 +2,8 @@
 #include "core/config.h"
 #include <iostream>
 #include <algorithm>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace ns {
 
@@ -42,6 +44,12 @@ Game::Game() : minimap_cam_(32) {
 Game::~Game() {
     AssetManager::instance().unload_all();
     CloseWindow();
+}
+
+void Game::start_game() {
+    state_machine_.set_state(GameState::Playing);
+    init_demo_map();
+    std::cerr << "[Game] Game started from test controller" << std::endl;
 }
 
 void Game::init_demo_map() {
@@ -137,13 +145,12 @@ void Game::update() {
     }
 }
 
-void Game::render() {
-    BeginDrawing();
+void Game::render_scene() {
+    // Renders the current game scene - used for both screen and offscreen rendering
     ClearBackground({26, 26, 46, 255});
 
     if (state_machine_.get_state() == GameState::Menu) {
         menu_.render_main_menu();
-        EndDrawing();
         return;
     }
 
@@ -152,7 +159,6 @@ void Game::render() {
         if (map_) map_renderer_.render(*map_, camera_.camera());
         EndMode2D();
         menu_.render_paused();
-        EndDrawing();
         return;
     }
 
@@ -161,7 +167,6 @@ void Game::render() {
         if (map_) map_renderer_.render(*map_, camera_.camera());
         EndMode2D();
         menu_.render_game_over(state_machine_.get_state() == GameState::Victory, 1, 1);
-        EndDrawing();
         return;
     }
 
@@ -185,8 +190,55 @@ void Game::render() {
                         " | Bridges: " + std::to_string(map_ ? map_->active_bridge_count(current_player_) : 0);
     DrawText(debug.c_str(), 10, SCREEN_HEIGHT - 30, 14, GRAY);
     DrawText("Click to place bridges", 10, SCREEN_HEIGHT - 14, 14, GRAY);
+}
 
+void Game::take_offscreen_screenshot(const std::string& name) {
+#ifdef ENABLE_SCREENSHOT_CAPTURE
+    // Create offscreen render texture if not exists
+    if (!screenshot_texture_ || screenshot_texture_->texture.width != SCREEN_WIDTH || 
+        screenshot_texture_->texture.height != SCREEN_HEIGHT) {
+        screenshot_texture_ = std::make_unique<RenderTexture2D>(
+            LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT));
+        std::cerr << "[Game] Created offscreen texture: " << SCREEN_WIDTH << "x" << SCREEN_HEIGHT << std::endl;
+    }
+    
+    // Ensure screenshots directory exists
+    struct stat st;
+    if (stat("test_screenshots", &st) != 0) {
+        mkdir("test_screenshots", 0755);
+    }
+    
+    std::string filepath = std::string("test_screenshots/") + name + ".png";
+    std::cerr << "[Game] Taking offscreen screenshot: " << filepath << std::endl;
+    
+    // Render to offscreen texture
+    BeginTextureMode(*screenshot_texture_);
+        render_scene();
+    EndTextureMode();
+    
+    // Export the texture to file
+    // Note: RenderTexture has texture.id, width, height
+    Image img = LoadImageFromTexture(screenshot_texture_->texture);
+    ExportImage(img, filepath.c_str());
+    UnloadImage(img);
+    
+    std::cerr << "[Game] Screenshot saved: " << filepath << std::endl;
+#else
+    std::cerr << "[Game] Screenshot disabled (ENABLE_SCREENSHOT_CAPTURE not defined)" << std::endl;
+#endif
+}
+
+void Game::render() {
+    BeginDrawing();
+    render_scene();
     EndDrawing();
+    
+    // Check if screenshot was requested and take offscreen screenshot
+    if (TestController::instance().has_pending_screenshot()) {
+        std::string name = TestController::instance().pending_screenshot_name();
+        take_offscreen_screenshot(name);
+        TestController::instance().clear_pending_screenshot();
+    }
 }
 
 void Game::run() {
