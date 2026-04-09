@@ -1,0 +1,11 @@
+build/
+out/
+*.exe
+*.dll
+*.so
+*.dylib
+.vscode/
+.env
+*.mp3
+*.png
+!assets/.gitkeep
