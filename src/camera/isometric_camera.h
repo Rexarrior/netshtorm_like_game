@@ -25,6 +25,7 @@ public:
     void pan(int dx, int dy);
     void pan_to(int gx, int gy);
     void update(float dt);
+    void snap_to_target();  // Instantly move visual to target
     
     void zoom_at(float factor, Vector2 screen_pos);
     void set_zoom(float z);

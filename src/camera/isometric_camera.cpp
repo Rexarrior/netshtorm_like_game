@@ -147,4 +147,9 @@ int IsometricCamera2D::visual_grid_y() const { return visual_y_; }
 float IsometricCamera2D::get_follow_speed() const { return follow_speed_; }
 void IsometricCamera2D::set_follow_speed(float s) { follow_speed_ = s; }
 
+void IsometricCamera2D::snap_to_target() {
+    visual_x_ = grid_x_;
+    visual_y_ = grid_y_;
+}
+
 } // namespace ns

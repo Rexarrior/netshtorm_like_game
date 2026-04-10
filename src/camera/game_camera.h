@@ -17,6 +17,7 @@ public:
     Position screen_to_grid(Vector2 screen_pos) const;
     void set_zoom(float z);
     float get_zoom() const;
+    void snap_to_target();  // Instantly move visual to target
     operator IsometricCamera2D&() { return *impl_; }
     operator const IsometricCamera2D&() const { return *impl_; }
 

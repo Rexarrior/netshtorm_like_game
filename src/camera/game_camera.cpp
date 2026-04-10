@@ -58,4 +58,8 @@ float GameCamera::get_zoom() const {
     return impl_->get_zoom();
 }
 
+void GameCamera::snap_to_target() {
+    impl_->snap_to_target();
+}
+
 } // namespace ns

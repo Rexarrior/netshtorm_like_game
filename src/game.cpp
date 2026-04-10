@@ -71,6 +71,8 @@ void Game::init_demo_map() {
     map_->add_geyser({16, 14}, 1);
 
     camera_.follow({4, 4});
+    camera_.set_zoom(1.5f);  // Close-up view of home island
+    camera_.snap_to_target(); // Instantly move visual to target
 
     energy_ = 500;
     std::cerr << "[Game] Demo map initialized with " << map_->islands().size() << " islands." << std::endl;
@@ -212,6 +214,11 @@ void Game::take_offscreen_screenshot(const std::string& name) {
     // Export the texture to file
     // Note: RenderTexture has texture.id, width, height
     Image img = LoadImageFromTexture(screenshot_texture_->texture);
+    
+    // Fix for macOS: RenderTexture Y-axis is flipped on some macOS GPUs
+    // Flipping vertically corrects the orientation for screenshots
+    ImageFlipVertical(&img);
+    
     ExportImage(img, filepath.c_str());
     UnloadImage(img);
     
