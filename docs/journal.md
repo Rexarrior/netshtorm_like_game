@@ -14,6 +14,40 @@
 
 ---
 
+## 2026-04-10 — Keyboard Panning Fixed
+
+**Date**: 2026-04-10
+**Phase**: Phase 1.5 (Camera Controls - Keyboard Fix)
+**Issue**: WASD/Arrow keys not working for camera panning
+
+### Root Cause
+Bug in `IsometricCamera2D::update()`:
+- At 60fps, `dt ≈ 0.016` seconds per frame
+- `follow_speed = 8.0` units/sec
+- `move = 8.0 * 0.016 = 0.128` pixels per frame
+- `floor(0.128) = 0` → **Camera never moved!**
+
+### Fix Applied
+```cpp
+// Before: could produce 0 movement per frame
+visual_x_ += (dx > 0 ? 1 : -1) * static_cast<int>(std::floor(move));
+
+// After: guaranteed minimum of 1 unit movement when distance > 0
+move_x = (dx > 0 ? 1 : -1) * std::max(1, static_cast<int>(std::floor(move)));
+```
+
+Also added `if (dt <= 0.0f) return;` early exit for correctness.
+
+### Result
+- ✅ WASD/Arrow keys now work for camera panning
+- ✅ All 62 tests pass
+- ✅ Game builds successfully
+
+### Commit
+`f43ba37` - Fix camera update movement at low dt values
+
+---
+
 ## 2026-04-10 — Camera Pan By Delta Fix
 
 **Date**: 2026-04-10
