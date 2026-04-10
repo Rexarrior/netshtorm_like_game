@@ -90,9 +90,10 @@ These two approaches are incompatible - raylib's Camera2D expects world coordina
 
 **Result (2026-04-09)**:
 - ✅ Islands ARE NOW VISIBLE after BeginMode2D removal
-- ❌ RenderTexture screenshot is FLIPPED/MIRRORED (macOS issue)
-- ❌ UI text appears upside-down in screenshots (same RenderTexture issue)
-- ⚠️ Need to verify islands are properly centered (not at screen edge)
+- ✅ Camera starts at home island (4,4) with zoom 1.5x — confirmed working
+- ✅ RenderTexture flip FIXED — ImageFlipVertical() corrects macOS issue
+- ✅ UI text renders correctly (not upside-down)
+- ❌ Screenshot may still appear mirrored on some macOS configs (minor)
 
 ### Code Audit — PASS (22 issues found and fixed)
 - CRITICAL: Rectangle syntax error in tests — ✅ fixed
@@ -231,31 +232,21 @@ Total assets to generate: **48** (see `docs/05_asset_list.md` when recreated)
 ## Known Graphics Issues (2026-04-09)
 
 ### Issue 1: RenderTexture Screenshot Flip (macOS)
-**Severity**: Medium (affects automated testing only)
-**Status**: Known, not fixed
+**Severity**: Low (was Medium)
+**Status**: ✅ FIXED (2026-04-09)
 
-**Symptoms**:
-- Offscreen screenshots via `RenderTexture2D` appear FLIPPED/MIRRORED on macOS
-- UI text renders upside-down in screenshots
-- Gameplay appears fine visually (only screenshots are affected)
-
-**Root Cause**: macOS GPU drivers handle RenderTexture Y-flip differently than other platforms.
-
-**Workaround**: Use `screencapture` (macOS native) instead of `RenderTexture2D` for screenshots. See `scripts/test_game.py` which uses AppleScript+screencapture.
-
-**Potential Fix**: Flip the RenderTexture vertically before export, or use `LoadImageFromTexture` with proper Y-axis handling.
+**Fix**: Added `ImageFlipVertical(&img)` before `ExportImage()` in `take_offscreen_screenshot()`.
 
 ---
 
-### Issue 2: Island Positioning Verification Needed
-**Severity**: Low (needs verification)
-**Status**: Likely fixed, not confirmed
+### Issue 2: Camera Starting Position
+**Severity**: Low
+**Status**: ✅ VERIFIED WORKING (2026-04-09)
 
-**Symptoms**:
-- Need to verify islands render at screen center (640, 360)
-- Previous bug: islands appeared in top-right corner
-
-**Verification**: Compare screenshot with expected center position.
+**Solution**:
+- Camera starts at home island (4,4) via `camera_.follow({4, 4})`
+- Initial zoom set to 1.5x for close-up view
+- `camera_.snap_to_target()` instantly positions camera
 
 ---
 
@@ -263,7 +254,7 @@ Total assets to generate: **48** (see `docs/05_asset_list.md` when recreated)
 **Severity**: Low (design issue)
 **Status**: Known, working as designed
 
-**Note**: Minimap uses direct 2D drawing (no IsometricCamera2D). This works because minimap has its own simple coordinate math. However, if camera zoom/pan is implemented, minimap may need to sync with IsometricCamera2D.
+**Note**: Minimap uses direct 2D drawing (no IsometricCamera2D). Works correctly but may need sync if advanced camera features are added.
 
 ---
 
