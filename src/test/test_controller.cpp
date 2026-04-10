@@ -5,15 +5,18 @@
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
+
+#ifdef _WIN32
+#include <direct.h>
+#else
 #include <sys/stat.h>
 #include <sys/select.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <ctime>
+#endif
 
-// Define CONTROL_PIPE_PATH similar to Python side
-#define CONTROL_PIPE_PATH ".game_control_pipe"
 #define SCREENSHOTS_PATH "test_screenshots"
 
 namespace ns {
@@ -24,17 +27,18 @@ TestController& TestController::instance() {
 }
 
 void TestController::init() {
-    // Check if test mode is enabled via environment variable
     const char* test_mode = getenv("GAME_TEST_MODE");
     if (!test_mode) {
         active_ = false;
         return;
     }
     
-    // Remove existing pipe
+#ifdef _WIN32
+    active_ = false;
+    std::cerr << "[TestController] Test mode disabled on Windows (FIFO not supported)" << std::endl;
+#else
     unlink(CONTROL_PIPE_PATH);
     
-    // Create FIFO
     if (mkfifo(CONTROL_PIPE_PATH, 0666) != 0) {
         std::cerr << "[TestController] Failed to create pipe: " << CONTROL_PIPE_PATH << std::endl;
         active_ = false;
@@ -43,9 +47,6 @@ void TestController::init() {
     
     std::cerr << "[TestController] Opening pipe..." << std::endl;
     
-    // Open pipe for reading - BLOCKING open
-    // Note: We need to open write end first or use a different approach
-    // For FIFO, opening read-only blocks until someone opens write end
     pipe_fd_ = open(CONTROL_PIPE_PATH, O_RDONLY);
     if (pipe_fd_ < 0) {
         std::cerr << "[TestController] Failed to open pipe: " << strerror(errno) << std::endl;
@@ -61,28 +62,29 @@ void TestController::init() {
         return;
     }
     
-    // Set line buffering
     setlinebuf(pipe_file_);
     
     active_ = true;
     std::cerr << "[TestController] Test mode active, listening on " << CONTROL_PIPE_PATH << std::endl;
+#endif
 }
 
 void TestController::process_commands(Game& game) {
-    if (!active_ || !pipe_file_) return;
+    if (!active_) return;
     
-    // Use select to check if data is available
+#ifndef _WIN32
+    if (!pipe_file_) return;
+    
     fd_set read_fds;
     FD_ZERO(&read_fds);
     FD_SET(pipe_fd_, &read_fds);
     
-    struct timeval tv = {0, 0}; // Non-blocking check
+    struct timeval tv = {0, 0};
     
     if (select(pipe_fd_ + 1, &read_fds, nullptr, nullptr, &tv) > 0) {
         char buffer[256];
         while (fgets(buffer, sizeof(buffer), pipe_file_) != nullptr) {
             std::string cmd(buffer);
-            // Remove trailing newline
             while (!cmd.empty() && (cmd.back() == '\n' || cmd.back() == '\r')) {
                 cmd.pop_back();
             }
@@ -92,6 +94,7 @@ void TestController::process_commands(Game& game) {
             }
         }
     }
+#endif
 }
 
 void TestController::execute_command(const std::string& cmd, Game& game) {
@@ -139,9 +142,6 @@ void TestController::execute_command(const std::string& cmd, Game& game) {
 }
 
 void TestController::handle_click(int x, int y, Game& game) {
-    // Simulate mouse click at screen coordinates
-    // For now just trigger a bridge placement at grid position
-    // The actual click simulation would require more game integration
     std::cerr << "[TestController] Click at (" << x << ", " << y << ")" << std::endl;
 }
 
@@ -160,13 +160,10 @@ void TestController::handle_start_game(Game& game) {
 
 void TestController::handle_quit(Game& game) {
     std::cerr << "[TestController] Quit requested" << std::endl;
-    // Signal the game to close
-    // This would need proper integration
 }
 
 void TestController::handle_screenshot(const std::string& name) {
     std::cerr << "[TestController] Screenshot requested: " << name << std::endl;
-    // Just set the pending flag - actual screenshot taken after EndDrawing
     pending_screenshot_name_ = name;
 }
 
@@ -189,23 +186,25 @@ void TestController::process_screenshot_after_render() {
 }
 
 void TestController::take_screenshot(const std::string& name) {
-    // Ensure screenshots directory exists
+#ifdef _WIN32
+    if (_mkdir(SCREENSHOTS_PATH) != 0 && errno != 0 && errno != EEXIST) {
+        return;
+    }
+#else
     struct stat st;
     if (stat(SCREENSHOTS_PATH, &st) != 0) {
-        mkdir(SCREENSHOTS_PATH, 0755);
+        if (mkdir(SCREENSHOTS_PATH, 0755) != 0 && errno != EEXIST) {
+            return;
+        }
     }
+#endif
     
     std::string final_path = std::string(SCREENSHOTS_PATH) + "/" + name + ".png";
     
     std::cerr << "[TestController] Screenshot: " << final_path << std::endl;
     
-    // Use LoadImageFromScreen to capture framebuffer
     Image screen = LoadImageFromScreen();
-    
-    // Export directly to target path
     ExportImage(screen, final_path.c_str());
-    
-    // Unload image data
     UnloadImage(screen);
     
     std::cerr << "[TestController] Saved: " << final_path << std::endl;

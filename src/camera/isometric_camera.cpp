@@ -1,5 +1,7 @@
 #include "isometric_camera.h"
 #include "../core/config.h"
+#include <cmath>
+#include <algorithm>
 
 namespace ns {
 

@@ -51,6 +51,7 @@ if(BUILD_GAME)
 
     if(MSVC)
         target_compile_options(netstorm_like PRIVATE /W4 /WX-)
+        target_compile_definitions(netstorm_like PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     else()
         target_compile_options(netstorm_like PRIVATE -Wall -Wextra -Wpedantic)
     endif()

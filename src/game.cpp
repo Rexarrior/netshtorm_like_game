@@ -2,8 +2,12 @@
 #include "core/config.h"
 #include <iostream>
 #include <algorithm>
+#ifdef _WIN32
+#include <direct.h>
+#else
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
 
 namespace ns {
 
@@ -198,9 +202,13 @@ void Game::take_offscreen_screenshot(const std::string& name) {
     }
     
     // Ensure screenshots directory exists
+    #ifdef _WIN32
+    if (_mkdir("test_screenshots") != 0 && errno != 0 && errno != EEXIST) {
+    #else
     struct stat st;
     if (stat("test_screenshots", &st) != 0) {
-        mkdir("test_screenshots", 0755);
+        if (mkdir("test_screenshots", 0755) != 0 && errno != EEXIST) {
+    #endif
     }
     
     std::string filepath = std::string("test_screenshots/") + name + ".png";
