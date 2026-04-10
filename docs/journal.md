@@ -14,6 +14,47 @@
 
 ---
 
+## 2026-04-10 — Camera Controls Implemented
+
+**Date**: 2026-04-10
+**Phase**: Phase 1.5 (Camera Controls)
+**Engine**: raylib 5.5 (C++17)
+
+### Camera Controls (2026-04-10)
+
+**Implemented**:
+- `IsometricCamera2D::pan_by_delta(dx, dy)` — pan by screen pixel delta
+- `IsometricCamera2D::set_target_zoom()` + `update_zoom(dt)` — smooth zoom interpolation
+- `InputHandler::is_pan_drag_active()` — detects right-click drag
+- `InputHandler::get_mouse_delta()` — mouse movement delta
+- `Game::pan_camera(dx, dy)` + `Game::zoom_camera(factor)` — test control methods
+- `TestController` commands: `pan dx dy`, `zoom factor` via FIFO pipe
+
+**Verified Working**:
+- ✅ Smooth zoom (interpolated, 5.0 zoom speed)
+- ✅ Pan via FIFO pipe commands
+- ✅ Zoom via FIFO pipe commands
+
+**Known Issues**:
+- ⚠️ WASD/arrow keys don't work in test environment (window focus issue with raylib)
+- ⚠️ Right-click drag on MacBook trackpad not possible (no external mouse)
+
+**Test Client**:
+- `scripts/test_game.py` rewritten to use internal FIFO pipe
+- `python3 scripts/test_game.py camera` — test camera pan/zoom
+
+### Test Controller Commands (FIFO Pipe)
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `start_game` | Start game from menu | `start_game` |
+| `screenshot <name>` | Take screenshot | `screenshot after_zoom` |
+| `pan <dx> <dy>` | Pan camera by pixels | `pan 100 50` |
+| `zoom <factor>` | Zoom by factor | `zoom 1.2` (zoom in 20%) |
+| `quit` | Quit game | `quit` |
+
+---
+
 ## 2026-04-10 — Graphics Issues Resolved
 
 **Date**: 2026-04-09
