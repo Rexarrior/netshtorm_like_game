@@ -125,22 +125,32 @@ void IsometricCamera2D::pan_by_delta(float dx, float dy) {
 }
 
 void IsometricCamera2D::update(float dt) {
+    if (dt <= 0.0f) return;  // No movement if no time passed
+    
     float dx = static_cast<float>(grid_x_) - static_cast<float>(visual_x_);
     float dy = static_cast<float>(grid_y_) - static_cast<float>(visual_y_);
     
     float move = follow_speed_ * dt;
     
-    if (std::abs(dx) <= move) {
-        visual_x_ = grid_x_;
-    } else {
-        visual_x_ += (dx > 0 ? 1 : -1) * static_cast<int>(std::floor(move));
+    // Move at least 1 unit if there's significant distance and move < 1
+    int move_x = 0, move_y = 0;
+    if (std::abs(dx) > 0.001f) {
+        if (std::abs(dx) <= move) {
+            move_x = static_cast<int>(dx);
+        } else {
+            move_x = (dx > 0 ? 1 : -1) * std::max(1, static_cast<int>(std::floor(move)));
+        }
+    }
+    if (std::abs(dy) > 0.001f) {
+        if (std::abs(dy) <= move) {
+            move_y = static_cast<int>(dy);
+        } else {
+            move_y = (dy > 0 ? 1 : -1) * std::max(1, static_cast<int>(std::floor(move)));
+        }
     }
     
-    if (std::abs(dy) <= move) {
-        visual_y_ = grid_y_;
-    } else {
-        visual_y_ += (dy > 0 ? 1 : -1) * static_cast<int>(std::floor(move));
-    }
+    visual_x_ += move_x;
+    visual_y_ += move_y;
 }
 
 void IsometricCamera2D::zoom_at(float factor, Vector2 screen_pos) {
