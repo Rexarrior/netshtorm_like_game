@@ -11,6 +11,7 @@ GameCamera::GameCamera() {
 }
 
 void GameCamera::update(float dt, InputHandler& input) {
+    // Keyboard panning
     int pan_dx = 0, pan_dy = 0;
     if (input.is_action_pressed(InputAction::PanUp)) pan_dy -= 1;
     if (input.is_action_pressed(InputAction::PanDown)) pan_dy += 1;
@@ -21,11 +22,25 @@ void GameCamera::update(float dt, InputHandler& input) {
         impl_->pan(pan_dx, pan_dy);
     }
     
-    float wheel = input.get_mouse_wheel_move();
-    if (wheel != 0) {
-        impl_->zoom_at(wheel > 0 ? 1.1f : 0.9f, input.get_mouse_position());
+    // Mouse drag panning (right-click or cmd+left-click)
+    if (input.is_pan_drag_active()) {
+        Vector2 delta = input.get_mouse_delta();
+        if (delta.x != 0 || delta.y != 0) {
+            impl_->pan_by_delta(delta.x, delta.y);
+        }
     }
     
+    // Mouse wheel zoom (instant for now, can be made smooth)
+    float wheel = input.get_mouse_wheel_move();
+    if (wheel != 0) {
+        float factor = wheel > 0 ? 1.1f : 0.9f;
+        impl_->set_target_zoom(impl_->get_zoom() * factor);
+    }
+    
+    // Smooth zoom interpolation
+    impl_->update_zoom(dt);
+    
+    // Smooth follow interpolation
     impl_->update(dt);
 }
 
@@ -60,6 +75,18 @@ float GameCamera::get_zoom() const {
 
 void GameCamera::snap_to_target() {
     impl_->snap_to_target();
+}
+
+void GameCamera::pan_by_delta(float dx, float dy) {
+    impl_->pan_by_delta(dx, dy);
+}
+
+void GameCamera::set_target_zoom(float z) {
+    impl_->set_target_zoom(z);
+}
+
+void GameCamera::update_zoom(float dt) {
+    impl_->update_zoom(dt);
 }
 
 } // namespace ns

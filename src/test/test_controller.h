@@ -44,6 +44,8 @@ private:
     void handle_start_game(Game& game);
     void handle_quit(Game& game);
     void handle_screenshot(const std::string& name);
+    void handle_pan(int dx, int dy, Game& game);
+    void handle_zoom(float factor, Game& game);
     
     // Actual screenshot implementation
     void take_screenshot(const std::string& name);

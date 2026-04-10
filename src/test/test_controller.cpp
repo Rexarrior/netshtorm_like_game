@@ -123,6 +123,16 @@ void TestController::execute_command(const std::string& cmd, Game& game) {
         if (iss >> name) {
             handle_screenshot(name);
         }
+    } else if (action == "pan") {
+        int dx, dy;
+        if (iss >> dx >> dy) {
+            handle_pan(dx, dy, game);
+        }
+    } else if (action == "zoom") {
+        float factor;
+        if (iss >> factor) {
+            handle_zoom(factor, game);
+        }
     } else {
         std::cerr << "[TestController] Unknown command: " << action << std::endl;
     }
@@ -158,6 +168,16 @@ void TestController::handle_screenshot(const std::string& name) {
     std::cerr << "[TestController] Screenshot requested: " << name << std::endl;
     // Just set the pending flag - actual screenshot taken after EndDrawing
     pending_screenshot_name_ = name;
+}
+
+void TestController::handle_pan(int dx, int dy, Game& game) {
+    std::cerr << "[TestController] Pan camera by (" << dx << ", " << dy << ")" << std::endl;
+    game.pan_camera(dx, dy);
+}
+
+void TestController::handle_zoom(float factor, Game& game) {
+    std::cerr << "[TestController] Zoom camera by factor " << factor << std::endl;
+    game.zoom_camera(factor);
 }
 
 void TestController::process_screenshot_after_render() {

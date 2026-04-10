@@ -31,6 +31,10 @@ public:
     ~Game();
     void run();
     void start_game();  // Called by test controller to start game from menu
+    
+    // Camera control for test controller
+    void pan_camera(int dx, int dy);
+    void zoom_camera(float factor);
 
 private:
     void init_demo_map();

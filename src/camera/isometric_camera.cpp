@@ -6,6 +6,8 @@ namespace ns {
 IsometricCamera2D::IsometricCamera2D(Vector2 offset, float initial_zoom)
     : offset_(offset)
     , zoom_(initial_zoom)
+    , target_zoom_(initial_zoom)
+    , zoom_speed_(5.0f)
     , grid_x_(0), grid_y_(0)
     , visual_x_(0), visual_y_(0)
     , follow_speed_(8.0f)
@@ -88,6 +90,19 @@ void IsometricCamera2D::pan_to(int gx, int gy) {
     grid_y_ = gy;
 }
 
+void IsometricCamera2D::pan_by_delta(float dx, float dy) {
+    // Convert screen pixel delta to grid delta
+    // At zoom=1, one grid unit = TILE_WIDTH pixels in isometric space
+    // But we need to convert screen delta to grid delta based on camera position
+    float grid_delta_x = dx / (TILE_WIDTH / 2.0f) / zoom_;
+    float grid_delta_y = dy / (TILE_HEIGHT / 2.0f) / zoom_;
+    
+    // In isometric: moving right on screen = moving in positive gx direction
+    // moving down on screen = moving in positive gy direction
+    grid_x_ += static_cast<int>(std::round(grid_delta_x + grid_delta_y) / 2.0f);
+    grid_y_ += static_cast<int>(std::round(grid_delta_y - grid_delta_x) / 2.0f);
+}
+
 void IsometricCamera2D::update(float dt) {
     float dx = static_cast<float>(grid_x_) - static_cast<float>(visual_x_);
     float dy = static_cast<float>(grid_y_) - static_cast<float>(visual_y_);
@@ -132,8 +147,31 @@ void IsometricCamera2D::zoom_at(float factor, Vector2 screen_pos) {
 
 void IsometricCamera2D::set_zoom(float z) {
     zoom_ = z;
+    target_zoom_ = z;
     if (zoom_ < CAMERA_MIN_ZOOM) zoom_ = CAMERA_MIN_ZOOM;
     if (zoom_ > CAMERA_MAX_ZOOM) zoom_ = CAMERA_MAX_ZOOM;
+}
+
+void IsometricCamera2D::set_target_zoom(float z) {
+    target_zoom_ = z;
+    if (target_zoom_ < CAMERA_MIN_ZOOM) target_zoom_ = CAMERA_MIN_ZOOM;
+    if (target_zoom_ > CAMERA_MAX_ZOOM) target_zoom_ = CAMERA_MAX_ZOOM;
+}
+
+void IsometricCamera2D::update_zoom(float dt) {
+    if (std::abs(zoom_ - target_zoom_) < 0.001f) {
+        zoom_ = target_zoom_;
+        return;
+    }
+    
+    float diff = target_zoom_ - zoom_;
+    float step = zoom_speed_ * dt;
+    
+    if (std::abs(diff) <= step) {
+        zoom_ = target_zoom_;
+    } else {
+        zoom_ += (diff > 0 ? 1 : -1) * step;
+    }
 }
 
 float IsometricCamera2D::get_zoom() const {

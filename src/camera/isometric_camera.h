@@ -24,11 +24,14 @@ public:
     void follow(int gx, int gy);
     void pan(int dx, int dy);
     void pan_to(int gx, int gy);
+    void pan_by_delta(float dx, float dy);  // Pan by screen pixel delta
     void update(float dt);
     void snap_to_target();  // Instantly move visual to target
     
     void zoom_at(float factor, Vector2 screen_pos);
     void set_zoom(float z);
+    void set_target_zoom(float z);  // Set target zoom for smooth interpolation
+    void update_zoom(float dt);     // Call each frame for smooth zoom
     float get_zoom() const;
     
     int target_grid_x() const;
@@ -43,6 +46,8 @@ public:
 private:
     Vector2 offset_;
     float zoom_;
+    float target_zoom_;
+    float zoom_speed_;
     int grid_x_, grid_y_;
     int visual_x_, visual_y_;
     float follow_speed_;

@@ -251,4 +251,13 @@ void Game::run() {
     }
 }
 
+void Game::pan_camera(int dx, int dy) {
+    camera_.pan_by_delta(static_cast<float>(dx), static_cast<float>(dy));
+}
+
+void Game::zoom_camera(float factor) {
+    float new_zoom = camera_.get_zoom() * factor;
+    camera_.set_target_zoom(new_zoom);
+}
+
 } // namespace ns
