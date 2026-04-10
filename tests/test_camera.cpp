@@ -207,5 +207,141 @@ TEST_F(IsometricCameraTest, GridToScreenWithFloatCoords) {
     EXPECT_NE(screen_4_5.y, screen_int.y);
 }
 
+// === Pan By Delta Tests ===
+
+TEST_F(IsometricCameraTest, PanByDeltaRight) {
+    cam_.follow(8, 8);
+    cam_.update(1.0f);
+    
+    // Pan right by 64 pixels
+    // At zoom=1, TILE_WIDTH=64, so 64 pixels = 1 tile in iso space
+    // But due to isometric projection, formula gives delta_gx=1, delta_gy=1
+    cam_.pan_by_delta(64.0f, 0.0f);
+    
+    // Camera moves diagonally in grid space
+    EXPECT_EQ(cam_.target_grid_x(), 9);
+    EXPECT_EQ(cam_.target_grid_y(), 9);
+}
+
+TEST_F(IsometricCameraTest, PanByDeltaDown) {
+    cam_.follow(8, 8);
+    cam_.update(1.0f);
+    
+    // Pan down by 32 pixels (TILE_HEIGHT=32)
+    // In isometric projection, dragging down moves camera by (1, -1) in grid space
+    // because screen_y = (gx + gy) * HALF_H and camera offset includes gx + gy
+    cam_.pan_by_delta(0.0f, 32.0f);
+    
+    // Camera moves to (9, 7)
+    EXPECT_EQ(cam_.target_grid_x(), 9);
+    EXPECT_EQ(cam_.target_grid_y(), 7);
+}
+
+TEST_F(IsometricCameraTest, PanByDeltaDiagonal) {
+    cam_.follow(8, 8);
+    cam_.update(1.0f);
+    
+    // Pan right and down (64, 32 pixels)
+    // In isometric, combined movement is (2, 0) because:
+    // - dx contribution: (2-0)*32 = 64
+    // - dy contribution: (2+0)*16 = 32
+    cam_.pan_by_delta(64.0f, 32.0f);
+    
+    // Camera moves to (10, 8)
+    EXPECT_EQ(cam_.target_grid_x(), 10);
+    EXPECT_EQ(cam_.target_grid_y(), 8);
+}
+
+TEST_F(IsometricCameraTest, PanByDeltaAtDifferentZoom) {
+    cam_.follow(8, 8);
+    cam_.set_zoom(2.0f);
+    cam_.update(1.0f);
+    
+    // At zoom=2, same pixel delta = half the grid movement
+    // delta = (64/32) / (2*2) = 0.5, rounds to 1
+    cam_.pan_by_delta(64.0f, 0.0f);
+    
+    // Camera moves to (9, 9)
+    EXPECT_EQ(cam_.target_grid_x(), 9);
+    EXPECT_EQ(cam_.target_grid_y(), 9);
+}
+
+// === Smooth Zoom Tests ===
+
+TEST_F(IsometricCameraTest, SetTargetZoom) {
+    cam_.set_target_zoom(1.5f);
+    EXPECT_EQ(cam_.get_zoom(), 1.0f);  // zoom not changed yet
+    // set_target_zoom only sets target, actual zoom unchanged
+}
+
+TEST_F(IsometricCameraTest, UpdateZoomInterpolates) {
+    cam_.set_target_zoom(2.0f);
+    
+    // At zoom speed 5.0, step = 5.0 * 0.1 = 0.5 per update_zoom(0.1) call
+    cam_.update_zoom(0.1f);  // 0.1s * 5.0 = 0.5 zoom step
+    EXPECT_EQ(cam_.get_zoom(), 1.5f);  // 1.0 + 0.5 = 1.5
+    
+    cam_.update_zoom(0.1f);  // another 0.5
+    EXPECT_EQ(cam_.get_zoom(), 2.0f);  // 1.5 + 0.5 = 2.0 (snaps)
+}
+
+TEST_F(IsometricCameraTest, UpdateZoomSnapsWhenClose) {
+    cam_.set_target_zoom(1.01f);
+    cam_.update_zoom(1.0f);  // big step
+    EXPECT_EQ(cam_.get_zoom(), 1.01f);  // should snap
+}
+
+TEST_F(IsometricCameraTest, ZoomClampedInTarget) {
+    cam_.set_target_zoom(10.0f);  // above max
+    EXPECT_EQ(cam_.get_zoom(), 1.0f);  // current unchanged
+    
+    cam_.update_zoom(1.0f);
+    EXPECT_EQ(cam_.get_zoom(), 2.0f);  // clamped to max
+}
+
+// === Snap To Target Tests ===
+
+TEST_F(IsometricCameraTest, SnapToTarget) {
+    cam_.follow(10, 10);
+    // Visual is still at 0,0
+    
+    cam_.snap_to_target();
+    EXPECT_EQ(cam_.visual_grid_x(), 10);
+    EXPECT_EQ(cam_.visual_grid_y(), 10);
+    EXPECT_EQ(cam_.target_grid_x(), 10);
+    EXPECT_EQ(cam_.target_grid_y(), 10);
+}
+
+TEST_F(IsometricCameraTest, SnapToTargetAfterPartialUpdate) {
+    cam_.follow(20, 20);
+    cam_.set_follow_speed(8.0f);
+    cam_.update(0.5f);  // moved 4 units
+    
+    EXPECT_EQ(cam_.visual_grid_x(), 4);
+    
+    cam_.snap_to_target();
+    EXPECT_EQ(cam_.visual_grid_x(), 20);
+    EXPECT_EQ(cam_.visual_grid_y(), 20);
+}
+
+// === Visual vs Target Grid Tests ===
+
+TEST_F(IsometricCameraTest, VisualAndTargetCanDiffer) {
+    cam_.follow(10, 10);
+    // Visual is at 0,0, target is at 10,10
+    
+    EXPECT_EQ(cam_.visual_grid_x(), 0);
+    EXPECT_EQ(cam_.visual_grid_y(), 0);
+    EXPECT_EQ(cam_.target_grid_x(), 10);
+    EXPECT_EQ(cam_.target_grid_y(), 10);
+    
+    // After update, visual should move toward target
+    cam_.set_follow_speed(100.0f);  // very fast
+    cam_.update(1.0f);
+    
+    // Should have snapped or moved close
+    EXPECT_GE(cam_.visual_grid_x(), 9);
+}
+
 } // namespace testing
 } // namespace ns

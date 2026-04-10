@@ -92,15 +92,36 @@ void IsometricCamera2D::pan_to(int gx, int gy) {
 
 void IsometricCamera2D::pan_by_delta(float dx, float dy) {
     // Convert screen pixel delta to grid delta
-    // At zoom=1, one grid unit = TILE_WIDTH pixels in isometric space
-    // But we need to convert screen delta to grid delta based on camera position
-    float grid_delta_x = dx / (TILE_WIDTH / 2.0f) / zoom_;
-    float grid_delta_y = dy / (TILE_HEIGHT / 2.0f) / zoom_;
+    // HALF_W = TILE_WIDTH/2 = 32, HALF_H = TILE_HEIGHT/2 = 16
+    //
+    // In isometric projection:
+    //   screen_x = (gx - gy) * HALF_W,  screen_y = (gx + gy) * HALF_H
+    //
+    // Camera at (cam_gx, cam_gy) means grid origin is at that screen position.
+    // For a point P at (gx, gy), its screen position relative to camera is:
+    //   rel_x = (gx - gy - cam_gx + cam_gy) * HALF_W
+    //   rel_y = (gx + gy - cam_gx - cam_gy) * HALF_H
+    //
+    // When camera moves by delta_cam = (delta_gx, delta_gy) in grid space,
+    // the relative position of point P changes by:
+    //   delta_rel_x = (-delta_gx + delta_gy) * HALF_W
+    //   delta_rel_y = (-delta_gx - delta_gy) * HALF_H
+    //
+    // When user drags on screen, content appears to move opposite:
+    //   content_move_x = -delta_rel_x,  content_move_y = -delta_rel_y
+    //   So: dx = (delta_gx - delta_gy) * HALF_W,  dy = (delta_gx + delta_gy) * HALF_H
+    //
+    // Solving the system for camera movement:
+    //   delta_gx = (dx/HALF_W + dy/HALF_H) / 2
+    //   delta_gy = (dx/HALF_W - dy/HALF_H) / 2
+    float HALF_W = TILE_WIDTH / 2.0f;
+    float HALF_H = TILE_HEIGHT / 2.0f;
     
-    // In isometric: moving right on screen = moving in positive gx direction
-    // moving down on screen = moving in positive gy direction
-    grid_x_ += static_cast<int>(std::round(grid_delta_x + grid_delta_y) / 2.0f);
-    grid_y_ += static_cast<int>(std::round(grid_delta_y - grid_delta_x) / 2.0f);
+    float delta_gx = (dx / HALF_W + dy / HALF_H) / (2.0f * zoom_);
+    float delta_gy = (dx / HALF_W - dy / HALF_H) / (2.0f * zoom_);
+    
+    grid_x_ += static_cast<int>(std::round(delta_gx));
+    grid_y_ += static_cast<int>(std::round(delta_gy));
 }
 
 void IsometricCamera2D::update(float dt) {
