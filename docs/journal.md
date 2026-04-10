@@ -14,6 +14,38 @@
 
 ---
 
+## 2026-04-11 — Windows Build Fixes
+
+**Date**: 2026-04-11
+**Phase**: Phase 1.5 (Build System - Windows)
+
+### Issues Fixed
+
+1. **Unix-only headers** (`unistd.h`, `sys/select.h`, `sys/stat.h`) - not available on Windows
+   - Added `#ifdef _WIN32` guards to use Windows-specific alternatives (`direct.h`)
+
+2. **`std::round`/`std::floor` not found** in `isometric_camera.cpp`
+   - Added `#include <cmath>` for MSVC compatibility
+
+3. **`CloseWindow`/`ShowCursor` conflicts with Windows API** in `winuser.h`
+   - raylib defines these functions but Windows SDK also defines them as macros
+   - Solution: Added `WIN32_LEAN_AND_MEAN` and `NOMINMAX` defines in CMakeLists.txt for MSVC builds
+   - Created `windows_sanitize.h` header for future Windows compatibility
+
+4. **Test controller FIFO not supported on Windows**
+   - Disabled FIFO-based test controller on Windows (uses `sys/select.h`, Unix-only)
+   - Test mode still works via environment variable check, just no pipe communication
+
+### Result
+- ✅ Game builds successfully on Windows with MSVC
+- ✅ All 62 tests pass
+- ✅ All assets load correctly when run from project root
+
+### Commit
+`a18d70b` - Fix Windows build with MSVC and raylib
+
+---
+
 ## 2026-04-10 — Keyboard Panning Fixed
 
 **Date**: 2026-04-10
