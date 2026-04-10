@@ -9,3 +9,7 @@ out/
 *.mp3
 *.png
 !assets/.gitkeep
+.DS_Store
+assets/.DS_Store
+scripts/__pycache__/
+test_screenshots/
