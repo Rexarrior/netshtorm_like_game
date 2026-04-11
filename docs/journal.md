@@ -14,6 +14,37 @@
 
 ---
 
+## 2026-04-11 — Bridge Placement Preview
+
+**Date**: 2026-04-11
+**Phase**: Phase 2 (Bridge Building MVP)
+
+### Changes Made
+
+1. **Bridge Shape Selection** - Keys 1-4 to select bridge shape:
+   - `1` = Straight
+   - `2` = L-Shape
+   - `3` = T-Shape
+   - `4` = Cross
+
+2. **Placement Preview** - Shows circle indicator at mouse position:
+   - Green circle = valid placement (adjacent to island/bridge, no overlap)
+   - Red circle = invalid placement
+
+3. **Build Fix** - Added `bridge_placer.h` include in `game.cpp`
+
+### How to Test
+
+1. Click "Start Game" from menu
+2. Use mouse to hover over water near islands
+3. Press 1-4 to change bridge shape
+4. Click to place bridge (costs 50 energy)
+
+### Commit
+`cf7ecd0` - Add bridge shape selection (keys 1-4) and placement preview
+
+---
+
 ## 2026-04-11 — Windows Build Fixes
 
 **Date**: 2026-04-11
