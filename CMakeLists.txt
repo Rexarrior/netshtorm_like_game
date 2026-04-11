@@ -55,6 +55,9 @@ if(BUILD_GAME)
     else()
         target_compile_options(netstorm_like PRIVATE -Wall -Wextra -Wpedantic)
     endif()
+
+    # Copy assets to build directory so game can run from build/Release
+    file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR}/Release)
 endif()
 
 # ── Tests ────────────────────────────────────────────────────────
