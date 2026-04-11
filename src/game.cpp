@@ -1,5 +1,6 @@
 ﻿#include "game.h"
 #include "core/config.h"
+#include "map/bridge_placer.h"
 #include <iostream>
 #include <algorithm>
 #ifdef _WIN32
@@ -121,10 +122,25 @@ void Game::handle_input() {
             timer_.set_speed(std::max(timer_.get_speed() - 1.0f, 1.0f));
         }
 
+        // Bridge shape selection with number keys
+        if (IsKeyPressed(KEY_ONE)) selected_bridge_shape_ = BridgeShape::Straight;
+        if (IsKeyPressed(KEY_TWO)) selected_bridge_shape_ = BridgeShape::LShape;
+        if (IsKeyPressed(KEY_THREE)) selected_bridge_shape_ = BridgeShape::TShape;
+        if (IsKeyPressed(KEY_FOUR)) selected_bridge_shape_ = BridgeShape::Cross;
+
+        // Track hover position for bridge preview
+        if (map_) {
+            hover_grid_pos_ = camera_.screen_to_grid(input_.get_mouse_position());
+            auto tiles = BridgePlacer::get_occupied_tiles(selected_bridge_shape_, hover_grid_pos_);
+            bridge_placement_valid_ = BridgePlacer::can_place(tiles, map_->islands(), map_->bridges()) &&
+                                     BridgePlacer::is_adjacent_to_existing(tiles, map_->islands(), map_->bridges(), current_player_);
+            show_bridge_preview_ = true;
+        }
+
         if (input_.is_mouse_left_just_pressed() && map_) {
             Position grid = camera_.screen_to_grid(input_.get_mouse_position());
             if (energy_ >= 50) {
-                bool placed = map_->place_bridge(BridgeShape::Straight, grid, current_player_);
+                bool placed = map_->place_bridge(selected_bridge_shape_, grid, current_player_);
                 if (placed) {
                     energy_ -= 50;
                     std::cerr << "[Game] Bridge placed at (" << grid.x << "," << grid.y << ")" << std::endl;
@@ -175,6 +191,17 @@ void Game::render_scene() {
     // No BeginMode2D - IsometricCamera2D handles all coordinate transformation manually
     if (map_) {
         map_renderer_.render(*map_, camera_);
+    }
+
+    // Render bridge placement preview
+    if (show_bridge_preview_ && map_) {
+        auto tiles = BridgePlacer::get_occupied_tiles(selected_bridge_shape_, hover_grid_pos_);
+        Color preview_col = bridge_placement_valid_ ? Color{0, 255, 0, 128} : Color{255, 0, 0, 128};
+        for (const auto& tile : tiles) {
+            Vector2 pos = camera_.grid_to_screen(tile.gx, tile.gy);
+            DrawCircle(static_cast<int>(pos.x), static_cast<int>(pos.y), 8, preview_col);
+        }
+        show_bridge_preview_ = false; // Reset after render
     }
 
     particles_.render();

@@ -59,6 +59,10 @@ private:
     std::unique_ptr<RenderTexture2D> screenshot_texture_;
     int energy_ = 500;
     int current_player_ = 0;
+    BridgeShape selected_bridge_shape_ = BridgeShape::Straight;
+    Position hover_grid_pos_ = {0, 0};
+    bool show_bridge_preview_ = false;
+    bool bridge_placement_valid_ = false;
 };
 
 } // namespace ns
